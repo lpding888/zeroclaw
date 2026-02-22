@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+DEFAULT_REPO_URL="${ZEROCLAW_REPO_URL:-https://github.com/lpding888/zeroclaw.git}"
+DEFAULT_RELEASE_BASE_URL="${ZEROCLAW_RELEASE_BASE_URL:-https://github.com/lpding888/zeroclaw/releases/latest/download}"
+DEFAULT_DOCKER_FALLBACK_IMAGE="${ZEROCLAW_DOCKER_FALLBACK_IMAGE:-ghcr.io/lpding888/zeroclaw:latest}"
+
 info() {
   echo "==> $*"
 }
@@ -58,12 +62,19 @@ Examples:
   ./bootstrap.sh --docker
 
   # Remote one-liner
-  curl -fsSL https://raw.githubusercontent.com/zeroclaw-labs/zeroclaw/main/scripts/bootstrap.sh | bash
+  curl -fsSL https://raw.githubusercontent.com/lpding888/zeroclaw/main/scripts/bootstrap.sh | bash
 
 Environment:
   ZEROCLAW_CONTAINER_CLI     Container CLI command (default: docker; auto-fallback: podman)
   ZEROCLAW_DOCKER_DATA_DIR   Host path for Docker config/workspace persistence
   ZEROCLAW_DOCKER_IMAGE      Docker image tag to build/run (default: zeroclaw-bootstrap:local)
+  ZEROCLAW_DOCKER_FALLBACK_IMAGE
+                            Docker image pulled when --docker --skip-build has no local image
+                            (default: ghcr.io/lpding888/zeroclaw:latest)
+  ZEROCLAW_REPO_URL          Git repository used for remote clone bootstrap
+                            (default: https://github.com/lpding888/zeroclaw.git)
+  ZEROCLAW_RELEASE_BASE_URL  Base URL for pre-built release assets
+                            (default: https://github.com/lpding888/zeroclaw/releases/latest/download)
   ZEROCLAW_API_KEY           Used when --api-key is not provided
   ZEROCLAW_PROVIDER          Used when --provider is not provided (default: openrouter)
   ZEROCLAW_MODEL             Used when --model is not provided
@@ -169,7 +180,7 @@ should_attempt_prebuilt_for_resources() {
 }
 
 install_prebuilt_binary() {
-  local target archive_url temp_dir archive_path extracted_bin install_dir
+  local target release_base_url archive_url temp_dir archive_path extracted_bin install_dir
 
   if ! have_cmd curl; then
     warn "curl is required for pre-built binary installation."
@@ -186,7 +197,8 @@ install_prebuilt_binary() {
     return 1
   fi
 
-  archive_url="https://github.com/zeroclaw-labs/zeroclaw/releases/latest/download/zeroclaw-${target}.tar.gz"
+  release_base_url="${ZEROCLAW_RELEASE_BASE_URL:-$DEFAULT_RELEASE_BASE_URL}"
+  archive_url="${release_base_url%/}/zeroclaw-${target}.tar.gz"
   temp_dir="$(mktemp -d -t zeroclaw-prebuilt-XXXXXX)"
   archive_path="$temp_dir/zeroclaw-${target}.tar.gz"
 
@@ -629,7 +641,7 @@ run_docker_bootstrap() {
   local config_mount workspace_mount
   local -a container_run_user_args container_run_namespace_args
   docker_image="${ZEROCLAW_DOCKER_IMAGE:-zeroclaw-bootstrap:local}"
-  fallback_image="ghcr.io/zeroclaw-labs/zeroclaw:latest"
+  fallback_image="${ZEROCLAW_DOCKER_FALLBACK_IMAGE:-$DEFAULT_DOCKER_FALLBACK_IMAGE}"
   if [[ "$TEMP_CLONE" == true ]]; then
     default_data_dir="$HOME/.zeroclaw-docker"
   else
@@ -651,7 +663,7 @@ run_docker_bootstrap() {
     info "Skipping Docker image build"
     if ! "$CONTAINER_CLI" image inspect "$docker_image" >/dev/null 2>&1; then
       warn "Local Docker image ($docker_image) was not found."
-      info "Pulling official ZeroClaw image ($fallback_image)"
+      info "Pulling fallback ZeroClaw image ($fallback_image)"
       if ! "$CONTAINER_CLI" pull "$fallback_image"; then
         error "Failed to pull fallback Docker image: $fallback_image"
         error "Run without --skip-build to build locally, or verify access to GHCR."
@@ -721,7 +733,7 @@ MSG
 SCRIPT_PATH="${BASH_SOURCE[0]:-$0}"
 SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" >/dev/null 2>&1 && pwd || pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." >/dev/null 2>&1 && pwd || pwd)"
-REPO_URL="https://github.com/zeroclaw-labs/zeroclaw.git"
+REPO_URL="${ZEROCLAW_REPO_URL:-$DEFAULT_REPO_URL}"
 ORIGINAL_ARG_COUNT=$#
 GUIDED_MODE="auto"
 
