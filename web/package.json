@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "i18n:sync:zh": "python3 scripts/sync_zh_locale.py"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",

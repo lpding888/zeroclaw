@@ -17,6 +17,20 @@ const routeTitles: Record<string, string> = {
   '/doctor': 'nav.doctor',
 };
 
+const localeCycle = ['zh-CN', 'en', 'tr'] as const;
+
+const localeLabel = (locale: string): string => {
+  if (locale === 'zh-CN') {
+    return '中文';
+  }
+
+  if (locale === 'tr') {
+    return 'TR';
+  }
+
+  return 'EN';
+};
+
 export default function Header() {
   const location = useLocation();
   const { logout } = useAuth();
@@ -26,26 +40,25 @@ export default function Header() {
   const pageTitle = t(titleKey);
 
   const toggleLanguage = () => {
-    setAppLocale(locale === 'en' ? 'tr' : 'en');
+    const currentIndex = localeCycle.indexOf(locale);
+    const nextIndex = (currentIndex + 1) % localeCycle.length;
+    const nextLocale = localeCycle[nextIndex] ?? 'zh-CN';
+    setAppLocale(nextLocale);
   };
 
   return (
     <header className="h-14 bg-gray-800 border-b border-gray-700 flex items-center justify-between px-6">
-      {/* Page title */}
       <h1 className="text-lg font-semibold text-white">{pageTitle}</h1>
 
-      {/* Right-side controls */}
       <div className="flex items-center gap-4">
-        {/* Language switcher */}
         <button
           type="button"
           onClick={toggleLanguage}
           className="px-3 py-1 rounded-md text-sm font-medium border border-gray-600 text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
         >
-          {locale === 'en' ? 'EN' : 'TR'}
+          {localeLabel(locale)}
         </button>
 
-        {/* Logout */}
         <button
           type="button"
           onClick={logout}

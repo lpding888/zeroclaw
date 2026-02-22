@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Send, Bot, User, AlertCircle } from 'lucide-react';
 import type { WsMessage } from '@/types/api';
 import { WebSocketClient } from '@/lib/ws';
+import { t } from '@/lib/i18n';
 
 interface ChatMessage {
   id: string;
@@ -35,7 +36,7 @@ export default function AgentChat() {
     };
 
     ws.onError = () => {
-      setError('Connection error. Attempting to reconnect...');
+      setError(t('agent.connection_error'));
     };
 
     ws.onMessage = (msg: WsMessage) => {
@@ -70,7 +71,7 @@ export default function AgentChat() {
             {
               id: crypto.randomUUID(),
               role: 'agent',
-              content: `[Tool Call] ${msg.name ?? 'unknown'}(${JSON.stringify(msg.args ?? {})})`,
+              content: `[${t('agent.tool_call')}] ${msg.name ?? t('common.unknown')}(${JSON.stringify(msg.args ?? {})})`,
               timestamp: new Date(),
             },
           ]);
@@ -82,7 +83,7 @@ export default function AgentChat() {
             {
               id: crypto.randomUUID(),
               role: 'agent',
-              content: `[Tool Result] ${msg.output ?? ''}`,
+              content: `[${t('agent.tool_result')}] ${msg.output ?? ''}`,
               timestamp: new Date(),
             },
           ]);
@@ -94,7 +95,7 @@ export default function AgentChat() {
             {
               id: crypto.randomUUID(),
               role: 'agent',
-              content: `[Error] ${msg.message ?? 'Unknown error'}`,
+              content: `[${t('agent.error_prefix')}] ${msg.message ?? t('agent.unknown_error')}`,
               timestamp: new Date(),
             },
           ]);
@@ -135,7 +136,7 @@ export default function AgentChat() {
       setTyping(true);
       pendingContentRef.current = '';
     } catch {
-      setError('Failed to send message. Please try again.');
+      setError(t('agent.send_failed'));
     }
 
     setInput('');
@@ -164,8 +165,8 @@ export default function AgentChat() {
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-gray-500">
             <Bot className="h-12 w-12 mb-3 text-gray-600" />
-            <p className="text-lg font-medium">ZeroClaw Agent</p>
-            <p className="text-sm mt-1">Send a message to start the conversation</p>
+            <p className="text-lg font-medium">{t('agent.welcome_title')}</p>
+            <p className="text-sm mt-1">{t('agent.welcome_hint')}</p>
           </div>
         )}
 
@@ -219,7 +220,7 @@ export default function AgentChat() {
                 <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
                 <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
               </div>
-              <p className="text-xs text-gray-500 mt-1">Typing...</p>
+              <p className="text-xs text-gray-500 mt-1">{t('agent.thinking')}</p>
             </div>
           </div>
         )}
@@ -237,7 +238,7 @@ export default function AgentChat() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={connected ? 'Type a message...' : 'Connecting...'}
+              placeholder={connected ? t('agent.placeholder') : t('agent.connecting')}
               disabled={!connected}
               className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50"
             />
@@ -257,7 +258,7 @@ export default function AgentChat() {
             }`}
           />
           <span className="text-xs text-gray-500">
-            {connected ? 'Connected' : 'Disconnected'}
+            {connected ? t('agent.connected') : t('agent.disconnected')}
           </span>
         </div>
       </div>

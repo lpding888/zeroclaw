@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [ ! -f web/package.json ]; then
+  exit 0
+fi
+
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "warning: python3 not found; skipping zh locale sync" >&2
+  exit 0
+fi
+
+echo "==> post-merge: syncing zh-CN locale"
+python3 web/scripts/sync_zh_locale.py || {
+  echo "warning: zh locale sync failed; keeping existing zh-CN locale file" >&2
+  exit 0
+}

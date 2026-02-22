@@ -7,6 +7,7 @@ import {
   ShieldAlert,
 } from 'lucide-react';
 import { getConfig, putConfig } from '@/lib/api';
+import { localizeErrorMessage, t } from '@/lib/i18n';
 
 export default function Config() {
   const [config, setConfig] = useState('');
@@ -21,7 +22,10 @@ export default function Config() {
         // The API may return either a raw string or a JSON string
         setConfig(typeof data === 'string' ? data : JSON.stringify(data, null, 2));
       })
-      .catch((err) => setError(err.message))
+      .catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : '';
+        setError(localizeErrorMessage(message, 'config.error'));
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -31,9 +35,10 @@ export default function Config() {
     setSuccess(null);
     try {
       await putConfig(config);
-      setSuccess('Configuration saved successfully.');
+      setSuccess(t('config.saved'));
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to save configuration');
+      const message = err instanceof Error ? err.message : '';
+      setError(localizeErrorMessage(message, 'config.error'));
     } finally {
       setSaving(false);
     }
@@ -60,7 +65,7 @@ export default function Config() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Settings className="h-5 w-5 text-blue-400" />
-          <h2 className="text-base font-semibold text-white">Configuration</h2>
+          <h2 className="text-base font-semibold text-white">{t('config.title')}</h2>
         </div>
         <button
           onClick={handleSave}
@@ -68,7 +73,7 @@ export default function Config() {
           className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
         >
           <Save className="h-4 w-4" />
-          {saving ? 'Saving...' : 'Save'}
+          {saving ? t('config.saving') : t('config.save')}
         </button>
       </div>
 
@@ -77,11 +82,10 @@ export default function Config() {
         <ShieldAlert className="h-5 w-5 text-yellow-400 flex-shrink-0 mt-0.5" />
         <div>
           <p className="text-sm text-yellow-300 font-medium">
-            Sensitive fields are masked
+            {t('config.sensitive_title')}
           </p>
           <p className="text-sm text-yellow-400/70 mt-0.5">
-            API keys, tokens, and passwords are hidden for security. To update a
-            masked field, replace the entire masked value with your new value.
+            {t('config.sensitive_desc')}
           </p>
         </div>
       </div>
@@ -106,10 +110,10 @@ export default function Config() {
       <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
         <div className="flex items-center justify-between px-4 py-2 border-b border-gray-800 bg-gray-800/50">
           <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">
-            TOML Configuration
+            {t('config.toml_config')}
           </span>
           <span className="text-xs text-gray-500">
-            {config.split('\n').length} lines
+            {config.split('\n').length} {t('config.lines_label')}
           </span>
         </div>
         <textarea
